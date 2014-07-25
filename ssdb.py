@@ -1,0 +1,203 @@
+# coding=utf8
+
+"""Python client for ssdb"""
+
+
+__version__ = '0.1.0'
+__author__ = 'hit9'
+__license__ = 'bsd'
+
+
+import socket
+import threading
+
+
+# response type mappings
+type_mappings = {
+    'set': int,
+    'setx': int,
+    'expire': int,
+    'ttl': int,
+    'setnx': int,
+    'get': str,
+    'getset': str,
+    'del': int,
+    'incr': int,
+    'exists': bool,
+    'getbit': int,
+    'setbit': int,
+    'countbit': int,
+    'substr': str,
+    'strlen': int,
+    'keys': list,
+    'scan': list,
+    'rscan': list,
+    'multi_set': int,
+    'multi_get': list,
+    'multi_del': int,
+    'hset': int,
+    'hget': str,
+    'hdel': int,
+    'hincr': int,
+    'hexists': bool,
+    'hsize': int,
+    'hlist': list,
+    'hkeys': list,
+    'hgetall': list,
+    'hscan': list,
+    'hrscan': list,
+    'hclear': int,
+    'multi_hset': int,
+    'multi_hget': list,
+    'multi_hdel': int,
+    'zset': int,
+    'zget': int,
+    'zdel': int,
+    'zincr': int,
+    'zexists': bool,
+    'zsize': int,
+    'zlist': list,
+    'zkeys': list,
+    'zscan': list,
+    'zrscan': list,
+    'zrank': int,
+    'zrrank': int,
+    'zrange': list,
+    'zrrange': list,
+    'zclear': int,
+    'zcount': int,
+    'zsum': int,
+    'zavg': int,
+    'zremrangebyrank': int,
+    'zremrangebyscore': int,
+    'multi_zset': int,
+    'multi_zget': list,
+    'multi_zdel': int,
+    'qsize': int,
+    'qclear': int,
+    'qfront': str,
+    'qback': str,
+    'qget': str,
+    'qslice': list,
+    'qpush': str,
+    'qpush_front': int,
+    'qpush_back': int,
+    'qpop': str,
+    'qpop_front': str,
+    'qpop_back': str
+}
+
+
+py_reserved_words = {
+    'delete': 'del'
+}
+
+
+status_ok = 'ok'
+status_not_found = 'not_found'
+
+
+class SSDBException(Exception):
+    pass
+
+
+class Connection(object):
+
+    def __init__(self, host='0.0.0.0', port=8888, timeout=None):
+        self.sock = None
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.cmds_last_executed = []
+        self.batch_mode = False
+
+    def connect(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.connect((self.host, self.port))
+        self.sock.setblocking(1)  # block mode
+        self.sock.settimeout(self.timeout)
+
+    def compile(self, args):
+        pattern = '{0}\n{1}\n'
+        buffers = [pattern.format(len(str(arg)), arg) for arg in args]
+        return ''.join(buffers) + '\n'
+
+    def send(self, args):
+        if self.sock is None:  # lazy connect
+            self.connect()
+        raw_cmd = self.compile(args)
+        self.cmds_last_executed.append(args[0])
+        self.sock.sendall(raw_cmd)
+
+    def recv(self):
+        raw_response = ''
+        responses_count = len(self.cmds_last_executed)
+        while responses_count > 0:
+            buf = self.sock.recv(1024)
+            raw_response += buf
+            responses_count -= buf.count('\n\n')
+        resp = self.response(raw_response)
+        self.cmds_last_executed = []
+        return resp
+
+    def batch(self, mode=True):
+        self.batch_mode = mode
+
+    def execute(self, args):
+        if self.batch_mode:
+            return self.send(args)
+        self.send(args)
+        return self.recv()
+
+    def response(self, raw_response):
+        raw_resps = raw_response.strip().split('\n\n')
+        _resps = [raw_resp.splitlines()[1::2] for raw_resp in raw_resps]
+
+        resps = []
+        for idx, lst in enumerate(_resps):
+            cmd = self.cmds_last_executed[idx]
+            status, body = lst[0], lst[1:]
+            resps.append(self.__single_response(status, body, cmd))
+
+        if self.batch_mode:
+            return resps
+        elif not self.batch_mode and len(resps) == 1:
+            return resps[0]
+
+    def __single_response(self, status, body, cmd):
+        if status == status_not_found:
+            return None
+        elif status == status_ok:
+            tp = type_mappings.get(cmd, str)
+            if tp in (bool, int, str):
+                return tp(body[0])
+            elif tp is list:
+                return tp(body)
+        else:
+            error_message = '{}: {}'.format(status, body[0])
+            raise SSDBException(error_message)
+
+
+class Client(object):
+
+    def __init__(self, host='0.0.0.0', port=8888, timeout=None):
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        # threading local: one thread, one conn
+        self.local = threading.local()
+        self.local.conn = Connection(host=host, port=port, timeout=timeout)
+
+    def batch(self, mode=True):
+        return self.local.conn.batch(mode)
+
+    def execute(self):
+        return self.local.conn.recv()
+
+    def __getattr__(self, name):
+        name = py_reserved_words.get(name, name)
+
+        def method(*args):
+            return self.local.conn.execute((name,) + args)
+        return method
