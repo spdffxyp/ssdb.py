@@ -1,6 +1,17 @@
 # coding=utf8
 
-"""Python client for ssdb"""
+"""
+Ssdb Python Client Library.
+
+Usage::
+
+    >>> from ssdb import Client
+    >>> c = Client(host='0.0.0.0', port=8888)
+    >>> c.set('key', 'val')
+    1
+    >>> c.get('key')
+    'val'
+"""
 
 
 __version__ = '0.1.0'
