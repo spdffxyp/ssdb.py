@@ -19,8 +19,17 @@ __author__ = 'hit9'
 __license__ = 'bsd'
 
 
+import sys
 import socket
 import threading
+
+
+if sys.version_info[0] < 3:  # compat
+    rawstr = str
+    nativestr = str
+else:
+    rawstr = lambda string: string.encode('utf8', 'replace')
+    nativestr = lambda raw_string: raw_string.decode('utf8', 'replace')
 
 
 # response type mappings
@@ -119,8 +128,8 @@ class Connection(object):
         self.host = host
         self.port = port
         self.timeout = timeout
-        self.cmds_last_executed = []
         self.batch_mode = False
+        self.__commands = []  # commands sent cache
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -135,21 +144,21 @@ class Connection(object):
         return ''.join(buffers) + '\n'
 
     def send(self, args):
-        if self.sock is None:  # lazy connect
+        if self.sock is None:
             self.connect()
-        raw_cmd = self.compile(args)
-        self.cmds_last_executed.append(args[0])
-        self.sock.sendall(raw_cmd)
+        command = self.compile(args)
+        self.sock.sendall(rawstr(command))
+        self.__commands.append(args[0])
 
     def recv(self):
-        raw_response = ''
-        responses_count = len(self.cmds_last_executed)
-        while responses_count > 0:
-            buf = self.sock.recv(1024)
-            raw_response += buf
-            responses_count -= buf.count('\n\n')
-        resp = self.response(raw_response)
-        self.cmds_last_executed = []
+        data = ''
+        resps_count = len(self.__commands)
+        while resps_count > 0:
+            buf = nativestr(self.sock.recv(1024))
+            data += buf
+            resps_count -= buf.count('\n\n')
+        resp = self.response(data)
+        self.__commands[:] = []
         return resp
 
     def batch(self, mode=True):
@@ -161,26 +170,25 @@ class Connection(object):
         self.send(args)
         return self.recv()
 
-    def response(self, raw_response):
-        raw_resps = raw_response.strip().split('\n\n')
-        _resps = [raw_resp.splitlines()[1::2] for raw_resp in raw_resps]
+    def response(self, data):
+        raw_resps = data.strip().split('\n\n')
+        bodys = [raw_resp.splitlines()[1::2] for raw_resp in raw_resps]
 
         resps = []
-        for idx, lst in enumerate(_resps):
-            cmd = self.cmds_last_executed[idx]
+        for index, lst in enumerate(bodys):
+            command = self.__commands[index]
             status, body = lst[0], lst[1:]
-            resps.append(self.__single_response(status, body, cmd))
+            resps.append(self.make_response(status, body, command))
 
         if self.batch_mode:
             return resps
-        elif not self.batch_mode and len(resps) == 1:
-            return resps[0]
+        return resps[0]
 
-    def __single_response(self, status, body, cmd):
+    def make_response(self, status, body, command):
         if status == status_not_found:
             return None
         elif status == status_ok:
-            tp = type_mappings.get(cmd, str)
+            tp = type_mappings.get(command, str)
             if tp in (bool, int, str):
                 return tp(body[0])
             elif tp is list:
