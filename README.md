@@ -54,6 +54,11 @@ class SSDBException(Exception):
     pass
 ```
 
+Documentation
+--------------
+
+Detail docs for this module can be found at https://github.com/hit9/ssdb.api.docs
+
 License
 -------
 
