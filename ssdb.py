@@ -105,7 +105,8 @@ type_mappings = {
     'qpush_back': int,
     'qpop': str,
     'qpop_front': str,
-    'qpop_back': str
+    'qpop_back': str,
+    'info': list
 }
 
 
