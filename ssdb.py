@@ -14,7 +14,7 @@ Usage::
 """
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __author__ = 'hit9'
 __license__ = 'bsd2'
 
