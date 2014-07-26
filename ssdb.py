@@ -121,7 +121,7 @@ class SSDBException(Exception):
     pass
 
 
-class Connection(object):
+class Connection(threading.local):
     """Ssdb connection object, usage::
 
         >>> conn = Connection(host='0.0.0.0', port=8888)
@@ -223,19 +223,17 @@ class Client(object):
         self.host = host
         self.port = port
         self.timeout = timeout
-        # threading local: one thread, one conn
-        self.local = threading.local()
-        self.local.conn = Connection(host=host, port=port, timeout=timeout)
+        self.conn = Connection(host=host, port=port, timeout=timeout)
 
     def batch(self, mode=True):
-        return self.local.conn.batch(mode)
+        return self.conn.batch(mode)
 
     def execute(self):
-        return self.local.conn.recv()
+        return self.conn.recv()
 
     def __getattr__(self, name):
         name = py_reserved_words.get(name, name)
 
         def method(*args):
-            return self.local.conn.execute((name,) + args)
+            return self.conn.execute((name,) + args)
         return method
