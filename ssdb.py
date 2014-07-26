@@ -203,10 +203,12 @@ class Connection(threading.local):
             return None
         elif status == status_ok:
             type = type_mappings.get(command, str)
-            if type in (bool, int, str):
+            if type in (int, str):
                 return type(body[0])
+            elif type is bool:
+                return bool(int(body[0]))
             elif type is list:
-                return type(body)
+                return list(body)
         else:
             if body:
                 error_message = '{}: {}'.format(status, body[0])

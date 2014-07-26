@@ -4,6 +4,7 @@
 import sys
 sys.path.insert(0, '.')
 import time
+import random
 
 from ssdb import SSDBClient
 
@@ -34,4 +35,13 @@ class TestCases(object):
 
     def test_ttl(self):
         assert c.setx('key', 'val', 5)
-        assert c.ttl('key') == 5
+        assert 0 < c.ttl('key') <= 5
+
+    def test_setnx(self):
+        key = random.randint(1000, 9999)
+        assert c.setnx(key, 'val') == 1
+        assert c.setnx(key, 'val') == 0
+
+    def test_getset(self):
+        assert c.set('key', 'val') == 1
+        assert c.getset('key', 'newval') == 'val'
