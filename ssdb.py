@@ -149,12 +149,11 @@ class Connection(threading.local):
         buffers = [pattern.format(len(str(arg)), arg) for arg in args]
         return ''.join(buffers) + '\n'
 
-    def send(self, args):
+    def send(self):
         if self.sock is None:
             self.connect()
-        command = self.compile(args)
+        command = ''.join(list(map(self.compile, self.__commands)))
         self.sock.sendall(rawstr(command))
-        self.__commands.append(args[0])
 
     def recv(self):
         data = ''
@@ -174,14 +173,15 @@ class Connection(threading.local):
     def batch(self, mode=True):
         self.batch_mode = mode
 
-    def execute(self, args):
-        if self.batch_mode:
-            return self.send(args)
-        self.send(args)
-        return self.recv()
+    def append_command(self, args):
+        self.__commands.append(args)
 
     def clear_commands(self):
         self.__commands[:] = []
+
+    def execute(self):
+        self.send()
+        return self.recv()
 
     def response(self, data):
         raw_resps = data.strip().split('\n\n')
@@ -189,7 +189,7 @@ class Connection(threading.local):
 
         resps = []
         for index, lst in enumerate(bodys):
-            command = self.__commands[index]
+            command = self.__commands[index][0]
             status, body = lst[0], lst[1:]
             resps.append(self.make_response(status, body, command))
 
@@ -228,15 +228,20 @@ class SSDBClient(object):
         self.timeout = timeout
         self.conn = Connection(host=host, port=port, timeout=timeout)
 
+    def batch_mode(self):
+        return self.conn.batch_mode
+
     def batch(self, mode=True):
         return self.conn.batch(mode)
 
     def execute(self):
-        return self.conn.recv()
+        return self.conn.execute()
 
     def __getattr__(self, name):
         name = py_reserved_words.get(name, name)
 
         def method(*args):
-            return self.conn.execute((name,) + args)
+            self.conn.append_command((name,) + args)
+            if not self.conn.batch_mode:
+                return self.execute()
         return method

@@ -3,7 +3,7 @@ ssdb.py
 
 Ssdb Python Client Library (threading safe).
 
-Latest version: 0.1.0
+Latest version: 0.1.0, Support Python 2.7+ and Python 3.3+
 
 Installation
 ------------
@@ -26,7 +26,7 @@ API Reference
 'val'
 ```
 
-### Batch Commands
+### Batch Commands Mode
 
 ```python
 >>> ssdb.batch()
@@ -35,6 +35,12 @@ API Reference
 >>> ssdb.set('key3', 'val3')
 >>> ssdb.execute()
 [1, 1, 1]
+```
+
+to disable batch mode (default: False):
+
+```python
+>>> ssdb.batch(False)
 ```
 
 ### Built-in Exceptions
