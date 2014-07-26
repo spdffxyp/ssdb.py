@@ -3,7 +3,9 @@ ssdb.py
 
 Ssdb Python Client Library (threading safe).
 
-Latest version: 0.1.0, Support Python 2.7+ and Python 3.3+
+Latest version: 0.1.1
+
+Support **Python 2.6+ or Python 3.3+**
 
 Installation
 ------------
