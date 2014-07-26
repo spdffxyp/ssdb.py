@@ -41,6 +41,12 @@ API Reference (Redis-py like)
 [1, 1, ['k1', 'v1', 'k2', 'v2']]
 ```
 
+### Returns
+
+1. If response status is `"ok"`, return value request.
+2. If response status is `"not_found"`, return `None`.
+3. If response status is `"clien_error"` or other(errors), raise `SSDBException`.
+
 ### Built-in Exceptions
 
 ```python
