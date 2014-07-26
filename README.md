@@ -37,7 +37,7 @@ API Reference
 [1, 1, 1]
 ```
 
-### Built-in BExceptions
+### Built-in Exceptions
 
 ```python
 class SSDBException(Exception):
