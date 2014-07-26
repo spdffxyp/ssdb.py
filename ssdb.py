@@ -122,6 +122,12 @@ class SSDBException(Exception):
 
 
 class Connection(object):
+    """Ssdb connection object, usage::
+
+        >>> conn = Connection(host='0.0.0.0', port=8888)
+        >>> conn.execute(['set', 'key', 'val'])
+        1
+    """
 
     def __init__(self, host='0.0.0.0', port=8888, timeout=None):
         self.sock = None
@@ -195,17 +201,23 @@ class Connection(object):
         if status == status_not_found:
             return None
         elif status == status_ok:
-            tp = type_mappings.get(command, str)
-            if tp in (bool, int, str):
-                return tp(body[0])
-            elif tp is list:
-                return tp(body)
+            type = type_mappings.get(command, str)
+            if type in (bool, int, str):
+                return type(body[0])
+            elif type is list:
+                return type(body)
         else:
             error_message = '{}: {}'.format(status, body[0])
             raise SSDBException(error_message)
 
 
 class Client(object):
+    """Ssdb client object, usage::
+
+        >>> client = Client(host='0.0.0.0', port=8888)
+        >>> client.set('key', 'val')
+        1
+    """
 
     def __init__(self, host='0.0.0.0', port=8888, timeout=None):
         self.host = host
