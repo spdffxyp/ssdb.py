@@ -45,7 +45,7 @@ API Reference (Redis-py like)
 
 1. If response status is `"ok"`, return value request.
 2. If response status is `"not_found"`, return `None`.
-3. If response status is `"clien_error"` or other(errors), raise `SSDBException`.
+3. If response status is `"client_error"` or other(errors), raise `SSDBException`.
 
 ### Built-in Exceptions
 

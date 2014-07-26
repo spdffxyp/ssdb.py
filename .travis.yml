@@ -1,0 +1,28 @@
+language: python
+
+python:
+  - 2.6
+  - 2.7
+  - 3.3
+  - 3.4
+
+branches:
+  only:
+    - master
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libsnappy-dev
+  - git clone --depth 1 -b scripting git://github.com/dim/ssdb.git
+  - cd ssdb
+  - make
+  - cd ..
+
+before_script:
+  - cd ssdb
+  - ./ssdb-server ssdb.conf -d
+
+after_script:
+  - killall -w ssdb-server
+
+script: nosetests -v -x --process-timeout=10 --nocapture tests.py
