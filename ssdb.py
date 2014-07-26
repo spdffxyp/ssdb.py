@@ -22,6 +22,7 @@ __license__ = 'bsd2'
 import sys
 import socket
 import threading
+import contextlib
 
 
 if sys.version_info[0] < 3:  # compat
@@ -214,7 +215,28 @@ class Connection(threading.local):
             raise SSDBException(error_message)
 
 
-class SSDBClient(object):
+class BaseClient(object):
+
+    def __getattr__(self, name):
+        name = py_reserved_words.get(name, name)
+
+        def method(*args):
+            self.conn.append_command((name,) + args)
+            if not self.conn.batch_mode:
+                return self.conn.execute()
+        return method
+
+
+class Pipeline(BaseClient):
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def execute(self):
+        return self.conn.execute()
+
+
+class SSDBClient(BaseClient):
     """Ssdb client object, usage::
 
         >>> c = SSDBClient(host='0.0.0.0', port=8888)
@@ -228,20 +250,8 @@ class SSDBClient(object):
         self.timeout = timeout
         self.conn = Connection(host=host, port=port, timeout=timeout)
 
-    def batch_mode(self):
-        return self.conn.batch_mode
-
-    def batch(self, mode=True):
-        return self.conn.batch(mode)
-
-    def execute(self):
-        return self.conn.execute()
-
-    def __getattr__(self, name):
-        name = py_reserved_words.get(name, name)
-
-        def method(*args):
-            self.conn.append_command((name,) + args)
-            if not self.conn.batch_mode:
-                return self.execute()
-        return method
+    @contextlib.contextmanager
+    def pipeline(self):
+        self.conn.batch(True)
+        yield Pipeline(self.conn)
+        self.conn.batch(False)

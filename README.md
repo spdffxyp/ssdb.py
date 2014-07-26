@@ -12,8 +12,8 @@ Installation
 $ pip install ssdb.py
 ```
 
-API Reference
--------------
+API Reference (Redis-py like)
+-----------------------------
 
 ### Sample Usage
 
@@ -26,21 +26,17 @@ API Reference
 'val'
 ```
 
-### Batch Commands Mode
+### Pipline
 
 ```python
->>> ssdb.batch()
->>> ssdb.set('key1', 'val1')
->>> ssdb.set('key2', 'val2')
->>> ssdb.set('key3', 'val3')
->>> ssdb.execute()
-[1, 1, 1]
-```
-
-to disable batch mode (default: False):
-
-```python
->>> ssdb.batch(False)
+>>> ssdb = SSDBClient()
+>>> with ssdb.pipeline() as pipe:
+...   pipe.set('k1', 'v1')
+...   pipe.set('k2', 'v2')
+...   pipe.multi_get('k1', 'k2')
+...   pipe.execute()
+...
+[1, 1, ['k1', 'v1', 'k2', 'v2']]
 ```
 
 ### Built-in Exceptions
