@@ -207,7 +207,10 @@ class Connection(threading.local):
             elif type is list:
                 return type(body)
         else:
-            error_message = '{}: {}'.format(status, body[0])
+            if body:
+                error_message = '{}: {}'.format(status, body[0])
+            else:
+                error_message = status
             raise SSDBException(error_message)
 
 
