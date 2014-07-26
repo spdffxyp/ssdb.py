@@ -157,8 +157,12 @@ class Connection(object):
             buf = nativestr(self.sock.recv(1024))
             data += buf
             resps_count -= buf.count('\n\n')
-        resp = self.response(data)
-        self.__commands[:] = []
+        try:
+            resp = self.response(data)
+        except Exception:
+            raise
+        finally:
+            self.clear_commands()
         return resp
 
     def batch(self, mode=True):
@@ -169,6 +173,9 @@ class Connection(object):
             return self.send(args)
         self.send(args)
         return self.recv()
+
+    def clear_commands(self):
+        self.__commands[:] = []
 
     def response(self, data):
         raw_resps = data.strip().split('\n\n')
