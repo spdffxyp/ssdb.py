@@ -5,8 +5,8 @@ Ssdb Python Client Library.
 
 Usage::
 
-    >>> from ssdb import Client
-    >>> c = Client(host='0.0.0.0', port=8888)
+    >>> from ssdb import SSDBClient
+    >>> c = SSDBClient(host='0.0.0.0', port=8888)
     >>> c.set('key', 'val')
     1
     >>> c.get('key')
@@ -16,7 +16,7 @@ Usage::
 
 __version__ = '0.1.0'
 __author__ = 'hit9'
-__license__ = 'bsd'
+__license__ = 'bsd2'
 
 
 import sys
@@ -211,11 +211,11 @@ class Connection(threading.local):
             raise SSDBException(error_message)
 
 
-class Client(object):
+class SSDBClient(object):
     """Ssdb client object, usage::
 
-        >>> client = Client(host='0.0.0.0', port=8888)
-        >>> client.set('key', 'val')
+        >>> c = SSDBClient(host='0.0.0.0', port=8888)
+        >>> c.set('key', 'val')
         1
     """
 
