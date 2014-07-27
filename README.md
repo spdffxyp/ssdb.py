@@ -7,6 +7,8 @@ Latest version: v0.1.2
 
 Support **Python 2.6+ or Python 3.3+**
 
+Support ssdb version: 1.6.8.8+
+
 Installation
 ------------
 
