@@ -88,7 +88,7 @@ type_mappings = {
     'zclear': int,
     'zcount': int,
     'zsum': int,
-    'zavg': int,
+    'zavg': float,
     'zremrangebyrank': int,
     'zremrangebyscore': int,
     'multi_zset': int,
@@ -204,7 +204,7 @@ class Connection(threading.local):
             return None
         elif status == status_ok:
             type = type_mappings.get(command, str)
-            if type in (int, str):
+            if type in (int, float, str):
                 return type(body[0])
             elif type is bool:
                 return bool(int(body[0]))
