@@ -3,7 +3,7 @@ ssdb.py
 
 Ssdb Python Client Library (threading safe), SSDB is a fast nosql database, an alternative to redis (https://github.com/ideawu/ssdb).
 
-Latest version: 0.1.1
+Latest version: 0.1.2
 
 Support **Python 2.6+ or Python 3.3+**
 
