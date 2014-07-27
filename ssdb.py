@@ -63,6 +63,7 @@ type_mappings = {
     'hexists': bool,
     'hsize': int,
     'hlist': list,
+    'hrlist': list,
     'hkeys': list,
     'hgetall': list,
     'hscan': list,
@@ -78,6 +79,7 @@ type_mappings = {
     'zexists': bool,
     'zsize': int,
     'zlist': list,
+    'zrlist': list,
     'zkeys': list,
     'zscan': list,
     'zrscan': list,
@@ -106,6 +108,8 @@ type_mappings = {
     'qpop': str,
     'qpop_front': str,
     'qpop_back': str,
+    'qlist': list,
+    'qrlist': list,
     'info': list
 }
 
