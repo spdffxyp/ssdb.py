@@ -123,56 +123,51 @@ status_ok = 'ok'
 status_not_found = 'not_found'
 
 
-
-def parse_raw_response(sock, resps_count):
-    resp_datas = []
-
-    while resps_count > 0:
-        resp_data = []
-
-        # parse status
-        status_len = ''
-        while 1:
-            buf = nativestr(sock.recv(1))
-            if buf == '\n':
-                break
-            status_len += buf
-        status_len = int(status_len)
-        status = nativestr(sock.recv(status_len))
-        resp_data.append(status)
-        assert nativestr(sock.recv(1)) == '\n'
-
-        # test if reaches the end of a response
-        buf = nativestr(sock.recv(1))
-        if buf == '\n':
-            # end of a response
-            resp_datas.append(resp_data)
-            resps_count -= 1
-            continue  # continue to next resp_data
-
-        # parse bodys
-        while 1:
-            body_len = buf
-            while 1:
-                buf = nativestr(sock.recv(1))
-                if buf == '\n':
-                    break
-                body_len += buf
-            body_len = int(body_len)
-            body = nativestr(sock.recv(body_len))
-            resp_data.append(body)
-            assert nativestr(sock.recv(1)) == '\n'
-
-            buf = nativestr(sock.recv(1))
-            if buf == '\n':
-                resp_datas.append(resp_data)
-                resps_count -= 1
-                break
-    return resp_datas
-
-
 class SSDBException(Exception):
     pass
+
+
+class ResponseParser(object):
+
+    def __init__(self, sock):
+        self.sock = sock
+
+    def read_bytes(self, size):
+        return nativestr(self.sock.recv(size))
+
+    def read_unit(self):
+        length = ''
+        while 1:
+            buf = self.read_bytes(1)
+            if buf == '\n':
+                break
+            length += buf
+        if length:  # when length != ''
+            length = int(length)
+            data = self.read_bytes(length)
+            assert self.read_bytes(1) == '\n'
+            return data
+        else:  # when buf == '\n', length == ''
+            return None
+
+    def parse(self, resps_count):
+        resp_datas = []
+
+        while resps_count > 0:
+            resp_data = []
+            status = self.read_unit()
+            resp_data.append(status)
+
+            # try to read bodys
+            while 1:
+                body = self.read_unit()
+                if body is None:
+                    # end of current response
+                    resp_datas.append(resp_data)
+                    resps_count -= 1
+                    break  # continue to next resp_data
+                resp_data.append(body)
+        return resp_datas
 
 
 class Connection(threading.local):
@@ -190,6 +185,7 @@ class Connection(threading.local):
         self.timeout = timeout
         self.batch_mode = False
         self.__commands = []  # commands sent cache
+        self.parser = None
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -197,6 +193,7 @@ class Connection(threading.local):
         self.sock.connect((self.host, self.port))
         self.sock.setblocking(1)  # block mode
         self.sock.settimeout(self.timeout)
+        self.parser = ResponseParser(self.sock)
 
     def compile(self, args):
         pattern = '{0}\n{1}\n'
@@ -210,7 +207,7 @@ class Connection(threading.local):
         self.sock.sendall(rawstr(command))
 
     def recv(self):
-        resp_datas = parse_raw_response(self.sock, len(self.__commands))
+        resp_datas = self.parser.parse(len(self.__commands))
 
         try:
             resp = self.response(resp_datas)
