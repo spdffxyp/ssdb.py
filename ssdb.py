@@ -147,8 +147,7 @@ class ResponseParser(object):
             data = self.read_bytes(length)
             assert self.read_bytes(1) == '\n'
             return data
-        else:  # when buf == '\n', length == ''
-            return None
+        return None  # when buf == '\n', length == ''
 
     def parse(self, resps_count):
         resp_datas = []
@@ -162,11 +161,10 @@ class ResponseParser(object):
             while 1:
                 body = self.read_unit()
                 if body is None:
-                    # end of current response
-                    resp_datas.append(resp_data)
-                    resps_count -= 1
-                    break  # continue to next resp_data
+                    break
                 resp_data.append(body)
+            resp_datas.append(resp_data)
+            resps_count -= 1
         return resp_datas
 
 
