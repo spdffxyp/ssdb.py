@@ -123,6 +123,54 @@ status_ok = 'ok'
 status_not_found = 'not_found'
 
 
+
+def parse_raw_response(sock, resps_count):
+    resp_datas = []
+
+    while resps_count > 0:
+        resp_data = []
+
+        # parse status
+        status_len = ''
+        while 1:
+            buf = nativestr(sock.recv(1))
+            if buf == '\n':
+                break
+            status_len += buf
+        status_len = int(status_len)
+        status = nativestr(sock.recv(status_len))
+        resp_data.append(status)
+        assert nativestr(sock.recv(1)) == '\n'
+
+        # test if reaches the end of a response
+        buf = nativestr(sock.recv(1))
+        if buf == '\n':
+            # end of a response
+            resp_datas.append(resp_data)
+            resps_count -= 1
+            continue  # continue to next resp_data
+
+        # parse bodys
+        while 1:
+            body_len = buf
+            while 1:
+                buf = nativestr(sock.recv(1))
+                if buf == '\n':
+                    break
+                body_len += buf
+            body_len = int(body_len)
+            body = nativestr(sock.recv(body_len))
+            resp_data.append(body)
+            assert nativestr(sock.recv(1)) == '\n'
+
+            buf = nativestr(sock.recv(1))
+            if buf == '\n':
+                resp_datas.append(resp_data)
+                resps_count -= 1
+                break
+    return resp_datas
+
+
 class SSDBException(Exception):
     pass
 
@@ -162,14 +210,10 @@ class Connection(threading.local):
         self.sock.sendall(rawstr(command))
 
     def recv(self):
-        data = ''
-        resps_count = len(self.__commands)
-        while resps_count > 0:
-            buf = nativestr(self.sock.recv(1024))
-            data += buf
-            resps_count -= buf.count('\n\n')
+        resp_datas = parse_raw_response(self.sock, len(self.__commands))
+
         try:
-            resp = self.response(data)
+            resp = self.response(resp_datas)
         except Exception:
             raise
         finally:
@@ -189,14 +233,11 @@ class Connection(threading.local):
         self.send()
         return self.recv()
 
-    def response(self, data):
-        raw_resps = data.strip().split('\n\n')
-        bodys = [raw_resp.splitlines()[1::2] for raw_resp in raw_resps]
-
+    def response(self, resp_datas):
         resps = []
-        for index, lst in enumerate(bodys):
+        for index, resp_data in enumerate(resp_datas):
             command = self.__commands[index][0]
-            status, body = lst[0], lst[1:]
+            status, body = resp_data[0], resp_data[1:]
             resps.append(self.make_response(status, body, command))
 
         if self.batch_mode:
