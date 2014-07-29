@@ -70,7 +70,7 @@ class SSDBException(Exception):
 
 - In Python3:
 
-   ```
+   ```python
    >>> ssdb = SSDBClient()
    >>> ssdb.set('你好', '世界')
    1
