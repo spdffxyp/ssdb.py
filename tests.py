@@ -41,6 +41,14 @@ class TestCases(object):
         for queue in queues:
             c.qclear(queue)
 
+    def test_unicode(self):
+        if sys.version_info[0] < 3:
+            assert c.set(u'键', u'值') == 1
+            assert c.get(u'键') == '值'
+        else:
+            assert c.set('键', '值') == 1
+            assert c.get('键') == '值'
+
     def test_set(self):
         assert c.set('key', 'val') == 1
 

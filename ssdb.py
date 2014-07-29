@@ -25,12 +25,20 @@ import threading
 import contextlib
 
 
-if sys.version_info[0] < 3:  # compat
-    rawstr = str
-    nativestr = str
+if sys.version_info[0] < 3:  # unicode issue compat
+    def nativestr(s):
+        if isinstance(s, unicode):
+            return s.encode('utf8', 'replace')
+        return str(s)
+    rawstr = nativestr
 else:
-    rawstr = lambda string: string.encode('utf8', 'replace')
-    nativestr = lambda raw_string: raw_string.decode('utf8', 'replace')
+    def rawstr(s):
+        return bytes(str(s).encode('utf8', 'replace'))
+
+    def nativestr(s):
+        if isinstance(s, bytes):
+            s = s.decode('utf8', 'replace')
+        return str(s)
 
 
 # response type mappings
@@ -195,7 +203,7 @@ class Connection(threading.local):
 
     def compile(self, args):
         pattern = '{0}\n{1}\n'
-        buffers = [pattern.format(len(str(arg)), arg) for arg in args]
+        buffers = [pattern.format(len(nativestr(arg)), nativestr(arg)) for arg in args]
         return ''.join(buffers) + '\n'
 
     def send(self):
