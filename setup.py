@@ -27,7 +27,7 @@ from setuptools import setup
 
 setup(
     name='ssdb.py',
-    version='0.1.3',
+    version='0.1.4',
     author='hit9',
     author_email='nz2324@126.com',
     description="Ssdb Python Client Library",
