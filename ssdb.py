@@ -203,8 +203,8 @@ class Connection(threading.local):
 
     def compile(self, args):
         pattern = '{0}\n{1}\n'
-        buffers = [pattern.format(len(nativestr(arg)),
-                                  nativestr(arg)) for arg in args]
+        buffers = [pattern.format(len(rawstr(arg)), nativestr(arg))
+                   for arg in args]
         return ''.join(buffers) + '\n'
 
     def send(self):

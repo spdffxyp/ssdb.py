@@ -5,9 +5,9 @@ Ssdb Python Client Library (threading safe), SSDB is a fast nosql database, an a
 
 Latest version: v0.1.3
 
-Support **Python 2.6+ or Python 3.3+**
-
-Support ssdb version: **SSDB 1.6.8.8+**
+- Support **Python 2.6+ or Python 3.3+**
+- Support ssdb version: **SSDB 1.6.8.8+**
+- UTF-8 encoding for all conversions between bytes and unicodes.
 
 Installation
 ------------
@@ -55,6 +55,32 @@ API Reference (Redis-py like)
 class SSDBException(Exception):
     pass
 ```
+
+### Unicode & Bytes Issue
+
+- In Python2:
+
+   ```python
+   >>> ssdb = SSDBClient()
+   >>> ssdb.set(u'你好', u'世界')
+   1
+   >>> ssdb.get(u'你好')
+   '\xe4\xb8\x96\xe7\x95\x8c'
+   ```
+
+- In Python3:
+
+   ```
+   >>> ssdb = SSDBClient()
+   >>> ssdb.set('你好', '世界')
+   1
+   >>> ssdb.get('你好', '世界')
+   '世界'
+   ```
+
+In a word, all unicodes will be encoded to bytes before sending to
+ssdb, and stored as bytes in ssdb, string values from ssdb perform as 
+native `str` in Python.
 
 Documentation
 --------------
