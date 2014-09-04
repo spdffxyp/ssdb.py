@@ -197,6 +197,18 @@ def test_zset_zget_zdel_zincr_zexists_zsize():
     assert c.zsize(z) == 0
 
 
+def test_zkeys_zscan_zrscan_zclear():
+    z = uk('zset')
+    a = uk('key')
+    b = uk('key')
+    assert c.zset(z, a, 12581)
+    assert c.zset(z, b, 12582)
+    assert c.zkeys(z, '', '', '', -1) == [a, b]
+    assert c.zscan(z, '', '', '', -1) == [a, 12581, b, 12582]
+    assert c.zrscan(z, '', '', '', -1) == [b, 12582, a, 12581]
+    assert c.zclear(z) == 2
+
+
 def test_chinese_value():
     k = uk()
     assert c.set(k, '你好世界') == 1

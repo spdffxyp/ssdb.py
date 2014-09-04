@@ -141,6 +141,14 @@ class Connection(threading.local):
         elif type is list:
             return data
 
+    def fix_types(self, cmd, data):
+        # zset score should be int
+        if cmd in ('zscan', 'zrscan', 'zrange', 'zrrange', 'multi_zget'):
+            for index, score in enumerate(data):
+                if index % 2 == 1:
+                    data[index] = int(score)
+        return data
+
     def request(self):
         if self.sock is None:
             self.connect()
@@ -153,7 +161,9 @@ class Connection(threading.local):
             cmd = self.commands[index]
             status, body = chunk[0], chunk[1:]
             if status == 'ok':
-                resps.append(self.build(commands[cmd[0]], body))
+                data = self.build(commands[cmd[0]], body)
+                data = self.fix_types(cmd[0], data)
+                resps.append(data)
             elif status == 'not_found':
                 resps.append(None)
             else:
