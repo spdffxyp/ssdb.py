@@ -39,7 +39,7 @@ def test_expire():
 def test_ttl():
     key = uk()
     assert c.setx(key, 'v', 1.2) == 1
-    assert 0 < c.ttl(key) <= 1.2
+    assert 0 <= c.ttl(key) <= 1.2
 
 
 def test_setnx():
@@ -102,9 +102,12 @@ def test_exists():
 
 def test_big_data():
     key = uk()
-    val = '123456' * 65536
-    assert c.set(key, val) == 1
-    assert c.get(key) == val
+    val1 = '123456' * 65536
+    val2 = 'hello' * 65535 * 3
+    assert c.set(key, val1) == 1
+    assert c.get(key) == val1
+    assert c.set(key, val2) == 1
+    assert c.get(key) == val2
 
 
 def test_substr():
@@ -139,4 +142,35 @@ def test_multi_set_get_del():
 
 
 def test_hset_hget_hincr_hexists():
-    pass
+    hsh = uk('hash')
+    field = uk('field')
+    assert c.hset(hsh, field, 'v') == 1
+    assert c.hget(hsh, field) == 'v'
+    assert c.hdel(hsh, field) == 1
+    assert c.hincr(hsh, field, 3) == 3
+    assert c.hexists(hsh, field) is True
+    assert c.hsize(hsh) == 1
+
+
+def test_hlist_hrlist():
+    start = uk('hash')
+    a, b = uk('hash'), uk('hash')
+    assert c.hset(a, 'field', 'v')
+    assert c.hset(b, 'field', 'v')
+    lst = c.hlist(start, uk('hash'), -1)
+    rlst = c.hrlist(uk('hash'), start, -1)
+    assert lst == [a, b] == rlst[::-1]
+
+
+def test_hkeys_hscan_hrscan_hgetall_hclear():
+    h = uk('hash')
+    a = uk('field')
+    b = uk('field')
+    assert c.hset(h, a, 'va') == 1
+    assert c.hset(h, b, 'vb') == 1
+    assert c.hkeys(h, '', '', -1) == [a, b]
+    assert c.hscan(h, '', '', -1) == [a, 'va', b, 'vb']
+    assert c.hrscan(h, '', '', -1) == [b, 'vb', a, 'va']
+    assert c.hgetall(h, '', '', -1) == [a, 'va', b, 'vb']
+    assert c.hclear(h) == 2
+    assert c.hsize(h) == 0

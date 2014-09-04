@@ -165,19 +165,23 @@ class Connection(threading.local):
 
 class BaseClient(object):
 
-    def __getattr__(self, name):
-        name = {'delete': 'del'}.get(name, name)
+    def __init__(self):
+        def create_method(command):
+            def method(*args):
+                self.conn.commands.append((command, ) + args)
+                if not isinstance(self, Pipeline):
+                    return self.conn.request()[0]
+            return method
 
-        def method(*args):
-            self.conn.commands.append((name, ) + args)
-            if not isinstance(self, Pipeline):
-                return self.conn.request()[0]
-        return method
+        for command in commands:
+            name = {'del': 'delete'}.get(command, command)
+            setattr(self, name, create_method(command))
 
 
 class Client(BaseClient):
 
     def __init__(self, host='0.0.0.0', port=8888):
+        super(Client, self).__init__()
         self.host = host
         self.port = port
         self.conn = Connection(host=host, port=port)
@@ -190,6 +194,7 @@ class Client(BaseClient):
 class Pipeline(BaseClient):
 
     def __init__(self, conn):
+        super(Pipeline, self).__init__()
         self.conn = conn
 
     def execute(self):
