@@ -2,14 +2,14 @@
 
 
 import sys
-sys.path.insert(0, '.')
 import time
 import random
 
-from ssdb import SSDBClient
+sys.path.insert(0, '.')
+import ssdb
 
 
-c = SSDBClient()
+c = ssdb.Client()
 
 ############# helper functions #######################
 
