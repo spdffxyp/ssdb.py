@@ -7,7 +7,7 @@ import ssdb
 
 c = ssdb.Client()
 
-uk_cursor = time.time()
+uk_cursor = time.time() * 1000
 
 
 def uk(prefix='key'):
@@ -174,3 +174,36 @@ def test_hkeys_hscan_hrscan_hgetall_hclear():
     assert c.hgetall(h, '', '', -1) == [a, 'va', b, 'vb']
     assert c.hclear(h) == 2
     assert c.hsize(h) == 0
+
+
+def test_multi_hset_hget_hdel():
+    h = uk('hash')
+    k1, k2, k3 = [uk() for i in range(3)]
+    assert c.multi_hset(h, k1, 'v1', k2, 'v2', k3, 'v3')
+    assert c.multi_hget(h, k1, k2, k3) == [k1, 'v1', k2, 'v2', k3, 'v3']
+    assert c.multi_hdel(h, k1, k2, k3) == 3
+    assert c.hsize(h) == 0
+
+
+def test_zset_zget_zdel_zincr_zexists_zsize():
+    z = uk('zset')
+    k = uk()
+    assert c.zset(z, k, 13) == 1
+    assert c.zget(z, k) == 13
+    assert c.zincr(z, k, 3) == 16
+    assert c.zexists(z, k) is True
+    assert c.zdel(z, k) == 1
+    assert c.zexists(z, k) is False
+    assert c.zsize(z) == 0
+
+
+def test_chinese_value():
+    k = uk()
+    assert c.set(k, '你好世界') == 1
+    assert c.get(k) == '你好世界'
+
+
+def test_chinese_key():
+    k = uk() + "你好中国人"
+    assert c.set(k, '你好世界') == 1
+    assert c.get(k) == '你好世界'

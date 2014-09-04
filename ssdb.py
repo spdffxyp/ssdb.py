@@ -127,7 +127,7 @@ class Connection(threading.local):
         pattern = '%d\n%s\n'
 
         for arg in args:
-            size = len(binary(arg))
+            size = len(binary(str(arg)))
             lst.append(pattern % (size, arg))
         lst.append('\n')
         # native string
