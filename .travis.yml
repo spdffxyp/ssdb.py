@@ -15,14 +15,17 @@ before_install:
   - sudo apt-get install -qq libsnappy-dev
   - git clone --depth 1 -b scripting git://github.com/dim/ssdb.git
   - cd ssdb
+  - git checkout 0f613f5927bb8af401a19a8dfae483c1a61d83da
   - make
   - cd ..
 
 before_script:
   - cd ssdb
   - ./ssdb-server ssdb.conf -d
+  - cd ..
 
 after_script:
   - killall -w ssdb-server
+  - rm -rf ssdb/var/*
 
 script: nosetests -v -x --process-timeout=10 --nocapture tests.py

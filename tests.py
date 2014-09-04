@@ -84,7 +84,13 @@ def test_setbit():
     key = uk()
     assert c.set(key, 'val') == 1
     assert c.setbit(key, 2, 0) == 1
-    assert c.getbit(key, 'ral')
+    assert c.get(key) == 'ral'
+
+
+def test_countbit():
+    key = uk()
+    assert c.set(key, 'val') == 1
+    assert c.countbit(key) == 8
 
 
 def test_exists():
@@ -99,3 +105,38 @@ def test_big_data():
     val = '123456' * 65536
     assert c.set(key, val) == 1
     assert c.get(key) == val
+
+
+def test_substr():
+    key = uk()
+    assert c.set(key, 'hello world') == 1
+    assert c.substr(key) == 'hello world'
+    assert c.substr(key, 6, 10) == 'world'
+
+
+def test_strlen():
+    key = uk()
+    assert c.set(key, 'hello world') == 1
+    assert c.strlen(key) == 11
+
+
+def test_keys_scan_rscan():
+    start = uk()
+    a = uk()
+    b = uk()
+    assert c.set(a, 1) == 1
+    assert c.set(b, 1) == 1
+    assert c.keys(start, uk(), 2) == [a, b]
+    assert c.scan(start, uk(), -1) == [a, '1', b, '1']
+    assert c.rscan(uk(), start, -1) == [b, '1', a, '1']
+
+
+def test_multi_set_get_del():
+    k1, k2, k3 = [uk() for i in range(3)]
+    assert c.multi_set(k1, 'v1', k2, 'v2', k3, 'v3') == 3
+    assert c.multi_get(k1, k2, k3) == [k1, 'v1', k2, 'v2', k3, 'v3']
+    assert c.multi_del(k1, k2, k3) == 3 == 3
+
+
+def test_hset_hget_hincr_hexists():
+    pass
