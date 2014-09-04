@@ -1,149 +1,101 @@
 # coding=utf8
 
-
 import sys
 import time
-import random
-
 sys.path.insert(0, '.')
 import ssdb
 
-
 c = ssdb.Client()
 
-############# helper functions #######################
+uk_cursor = time.time()
 
 
-def rand_key():
-    return 'key' + str(random.randint(10000, 99999))
+def uk(prefix='key'):
+    global uk_cursor
+    uk_cursor = uk_cursor + 1
+    return '%s-%d' % (prefix, uk_cursor)
 
 
-############# test cases #############################
+def test_set():
+    assert c.set(uk(), 'v') == 1
 
 
-class TestCases(object):
+def test_setx():
+    key = uk()
+    assert c.setx(key, 'v', 1.2) == 1
+    assert c.ttl(key) <= 1.2
+    time.sleep(1.2)
+    assert c.exists(key) is False
 
-    def setUp(self):
-        # clear keys, all hashes, all zsets, all queues
-        keys = c.keys('', '', -1)
-        for key in keys:
-            c.delete(key)
 
-        hashes = c.hlist('', '', -1)
-        for hash in hashes:
-            c.hclear(hash)
+def test_expire():
+    key = uk()
+    assert c.set(key, 'v') == 1
+    assert c.expire(key, 1.2) == 1
+    assert c.ttl(key) <= 1.2
+    assert c.expire(uk(), 1.1) == 0
 
-        zsets = c.zlist('', '', -1)
-        for zset in zsets:
-            c.zclear(zset)
 
-        queues = c.qlist('', '', -1)
-        for queue in queues:
-            c.qclear(queue)
+def test_ttl():
+    key = uk()
+    assert c.setx(key, 'v', 1.2) == 1
+    assert 0 < c.ttl(key) <= 1.2
 
-    def test_unicode(self):
-        if sys.version_info[0] < 3:
-            assert c.set(u'键', u'值') == 1
-            assert c.get(u'键') == '值'
-        else:
-            assert c.set('键', '值') == 1
-            assert c.get('键') == '值'
 
-    def test_set(self):
-        assert c.set('key', 'val') == 1
+def test_setnx():
+    key = uk()
+    assert c.setnx(key, 'v') == 1
+    assert c.setnx(key, 'v') == 0
 
-    def test_setx(self):
-        assert c.setx('key', 'val', 5)
-        assert c.get('key') == 'val'
-        time.sleep(5.1)
-        assert c.get('key') is None
 
-    def test_get(self):
-        assert c.set('key', 'val') is 1
-        assert c.get('key') == 'val'
+def test_get():
+    key = uk()
+    assert c.set(key, 'v') == 1
+    assert c.get(key) == 'v'
 
-    def test_expire(self):
-        assert c.set('key', 'val')
-        assert c.expire('key', 3) == 1
-        time.sleep(3.1)
-        assert c.get('key') is None
 
-    def test_ttl(self):
-        assert c.setx('key', 'val', 5)
-        assert 0 < c.ttl('key') <= 5
+def test_getset():
+    key = uk()
+    assert c.set(key, 'v') == 1
+    assert c.getset(key, 'val') == 'v'
 
-    def test_setnx(self):
-        key = rand_key()
-        assert c.setnx(key, 'val') == 1
-        assert c.setnx(key, 'val') == 0
 
-    def test_getset(self):
-        assert c.set('key', 'val') == 1
-        assert c.getset('key', 'newval') == 'val'
+def test_del():
+    key = uk()
+    assert c.set(key, 'v')
+    assert c.delete(key) == 1
+    assert c.exists(key) is False
 
-    def test_delete(self):
-        assert c.set('key', 'val') == 1
-        assert c.delete('key') == 1
-        assert c.delete('key-not-exist' + str(random.randint(1000, 9999))) == 1
 
-    def test_incr(self):
-        assert c.set('key', 1) == 1
-        assert c.incr('key', 2) == 3
+def test_incr():
+    key = uk()
+    assert c.set(key, 1) == 1
+    assert c.incr(key, 2) == 3
+    assert c.get(key) == '3'
 
-    def test_exists(self):
-        assert c.exists(rand_key()) is False
-        assert c.set('key', 'val') == 1
-        assert c.exists('key') is True
 
-    def test_getbit(self):
-        assert c.set('key', 'val') == 1
-        assert c.getbit('key', 2) == 1
-        assert c.getbit(rand_key(), 1) == 0
+def test_getbit():
+    key = uk()
+    assert c.set(key, 'val') == 1
+    assert c.getbit(key, 2) == 1
 
-    def test_setbit(self):
-        assert c.set('key', 'val') == 1
-        assert c.setbit('key', 2, 0) == 1
-        assert c.getbit('key', 2) == 0
 
-        key = rand_key()
-        assert c.setbit(key, 1, 1) == 0
-        assert c.setbit(key, 1, 1) == 1
+def test_setbit():
+    key = uk()
+    assert c.set(key, 'val') == 1
+    assert c.setbit(key, 2, 0) == 1
+    assert c.getbit(key, 'ral')
 
-    def test_countbit(self):
-        assert c.set('key', 'val')
-        assert c.countbit('key') == 8
 
-    def test_substr(self):
-        assert c.set('key', 'some string')
-        assert c.substr('key', 0, 4) == 'some'
-        assert c.substr('key', 0, -1) == 'some strin'
-        assert c.substr('key') == 'some string'
+def test_exists():
+    key = uk()
+    assert c.set(key, 'val') == 1
+    assert c.exists(key) is True
+    assert c.exists(uk()) is False
 
-    def test_strlen(self):
-        assert c.set('key', 'val')
-        assert c.strlen('key') == 3
 
-    def test_keys(self):
-        assert c.set('key1', 'val1')
-        assert c.set('key2', 'val2')
-        assert c.keys('', '', -1) == ['key1', 'key2']
-
-    def test_scan(self):
-        assert c.set('key1', 'val1')
-        assert c.set('key2', 'val2')
-        assert c.scan('', '', 2) == ['key1', 'val1', 'key2', 'val2']
-
-    def test_rscan(self):
-        assert c.set('key1', 'val1')
-        assert c.set('key2', 'val2')
-        assert c.rscan('', '', 2) == ['key2', 'val2', 'key1', 'val1']
-
-    def test_multi_set(self):
-        assert c.multi_set('key1', 'val1', 'key2', 'val2') == 2
-        assert c.keys('', '', -1) == ['key1', 'key2']
-        assert c.get('key1') == 'val1'
-        assert c.get('key2') == 'val2'
-
-    def test_multi_get(self):
-        assert c.multi_set('key1', 'val1', 'key2', 'val2') == 2
-        assert c.multi_get('key1', 'key2') == ['key1', 'val1', 'key2', 'val2']
+def test_big_data():
+    key = uk()
+    val = '123456' * 65536
+    assert c.set(key, val) == 1
+    assert c.get(key) == val

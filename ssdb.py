@@ -146,7 +146,7 @@ class Connection(threading.local):
             self.connect()
         cmds = list(map(self.compile, self.commands))
         self.sock.sendall(binary(''.join(cmds)))
-        chunks = parse(self.sock, 1)
+        chunks = parse(self.sock, len(self.commands))
         resps = []
 
         for index, chunk in enumerate(chunks):
@@ -184,7 +184,7 @@ class Client(BaseClient):
 
     @contextlib.contextmanager
     def pipeline(self):
-        yield Pipline(self.conn)
+        yield Pipeline(self.conn)
 
 
 class Pipeline(BaseClient):
