@@ -104,7 +104,7 @@ commands = {
 }
 
 
-class SSDBError(Exception):
+class SSDBException(Exception):
     pass
 
 
@@ -157,7 +157,7 @@ class Connection(threading.local):
             elif status == 'not_found':
                 resps.append(None)
             else:
-                raise SSDBError('%r on command %r', status, cmd)
+                raise SSDBException('%r on command %r', status, cmd)
 
         self.commands[:] = []
         return resps
