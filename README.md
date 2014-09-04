@@ -48,12 +48,20 @@ API Reference (Redis-py like)
 2. If response status is `"not_found"`, return `None`.
 3. If response status is `"client_error"` or other(errors), raise `SSDBException`.
 
+
 ### Built-in Exceptions
 
 ```python
 class SSDBException(Exception):
     pass
 ```
+
+Types
+-----
+
+The data type each command returns can be found in [ssdb.py](ssdb.py) `commands`.
+
+**Note:** zset scores will be cast to int from v0.1.5.
 
 Documentation
 --------------
