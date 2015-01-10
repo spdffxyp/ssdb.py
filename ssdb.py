@@ -4,10 +4,10 @@
 Python client for https://github.com/ideawu/ssdb
 """
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __license__ = 'bsd2'
 
-
+import spp
 import sys
 import socket
 import threading
@@ -103,6 +103,14 @@ commands = {
     'info': list
 }
 
+conversions = {
+    int: lambda lst: int(lst[0]),
+    str: lambda lst: str(lst[0]),
+    float: lambda lst: float(lst[0]),
+    bool: lambda lst: bool(int(lst[0])),
+    list: lambda lst: list(lst)
+}
+
 
 class SSDBException(Exception):
     pass
@@ -115,6 +123,7 @@ class Connection(threading.local):
         self.port = port
         self.sock = None
         self.commands = []
+        self.parser = spp.Parser()
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -122,7 +131,11 @@ class Connection(threading.local):
         self.sock.setblocking(1)
         self.sock.connect((self.host, self.port))
 
-    def compile(self, args):
+    def close(self):
+        self.sock.close()
+        self.parser.clear()
+
+    def encode(self, args):
         lst = []
         pattern = '%d\n%s\n'
 
@@ -130,47 +143,49 @@ class Connection(threading.local):
             size = len(binary(str(arg)))
             lst.append(pattern % (size, arg))
         lst.append('\n')
-        # native string
         return ''.join(lst)
 
     def build(self, type, data):
-        if type in (int, str, float):
-            return type(data[0])
-        elif type is bool:
-            return bool(int(data[0]))
-        elif type is list:
-            return data
+        return conversions[type](data)
 
-    def fix_types(self, cmd, data):
-        # zset score should be int
-        if cmd in ('zscan', 'zrscan', 'zrange', 'zrrange', 'multi_zget'):
-            for index, score in enumerate(data):
-                if index % 2 == 1:
-                    data[index] = int(score)
-        return data
-
-    def request(self):
+    def request(self):  # noqa
+        # lazy connect
         if self.sock is None:
             self.connect()
-        cmds = list(map(self.compile, self.commands))
+
+        # send commands
+        cmds = list(map(self.encode, self.commands))
         self.sock.sendall(binary(''.join(cmds)))
-        chunks = parse(self.sock, len(self.commands))
-        resps = []
+
+        chunks = []
+
+        while len(chunks) < len(self.commands):
+            buf = self.sock.recv(4096)
+
+            if not isinstance(buf, bytes) and not len(buf):
+                self.close()
+                raise socket.error('Socket closed on remote end')
+
+            self.parser.feed(buf)
+            chunk = self.parser.get()
+            if chunk is not None:
+                chunks.append(chunk)
+
+        responses = []
 
         for index, chunk in enumerate(chunks):
             cmd = self.commands[index]
             status, body = chunk[0], chunk[1:]
+
             if status == 'ok':
                 data = self.build(commands[cmd[0]], body)
-                data = self.fix_types(cmd[0], data)
-                resps.append(data)
+                responses.append(data)
             elif status == 'not_found':
-                resps.append(None)
+                responses.append(None)
             else:
-                raise SSDBException('%r on command %r', status, cmd)
-
+                raise SSDBException('%r on command %r'. status, cmd)
         self.commands[:] = []
-        return resps
+        return responses
 
 
 class BaseClient(object):
@@ -209,45 +224,3 @@ class Pipeline(BaseClient):
 
     def execute(self):
         return self.conn.request()
-
-
-def recv_all(sock, size):
-    data = binary('')
-    while size > 0:
-        buf = sock.recv(size)
-        size -= len(buf)
-        data += buf
-    return data
-
-
-def recv_ch(sock):
-    return sock.recv(1)
-
-
-def recv_until(sock, ch):
-    data = binary('')
-    while 1:
-        buf = recv_ch(sock)
-        if buf == ch:
-            break
-        data += buf
-    return data
-
-
-def parse(sock, count):
-    chunk = []
-    chunks = []
-    n = binary('\n')
-
-    while count > 0:
-        buf = recv_until(sock, n)
-        if not buf:
-            chunks.append(chunk)
-            chunk = []
-            count -= 1
-            continue
-        size = int(buf)
-        body = recv_all(sock, size)
-        chunk.append(string(body))
-        assert n == recv_ch(sock)
-    return chunks
