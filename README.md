@@ -3,11 +3,17 @@ ssdb.py
 
 Ssdb Python Client Library (threading local), SSDB is a fast nosql database, an alternative to redis (https://github.com/ideawu/ssdb).
 
-Latest version: v0.1.5 ![](https://travis-ci.org/hit9/ssdb.py.svg)
+Latest version: v0.1.6 ![](https://travis-ci.org/hit9/ssdb.py.svg)
 
 - Support **Python 2.6+ or Python 3.3+**
 - Support ssdb version: **SSDB 1.6.8.8+**
 - UTF-8 encoding for all conversions between bytes and unicodes.
+
+Changes for 0.1.6:
+
+* Faster protocol parser via [spp_py](https://github.com/hit9/spp_py) built on C extension.
+* No more fix types for zset scores, now is str. (Non-Backward Compact)
+* Add api `client.close`
 
 Installation
 ------------
@@ -60,8 +66,6 @@ Types
 -----
 
 The data type each command returns can be found in [ssdb.py](ssdb.py) `commands`.
-
-**Note:** zset scores will be cast to int from v0.1.5.
 
 Documentation
 --------------
