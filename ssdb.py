@@ -132,8 +132,9 @@ class Connection(threading.local):
         self.sock.connect((self.host, self.port))
 
     def close(self):
-        self.sock.close()
         self.parser.clear()
+        self.sock.close()
+        self.sock = None
 
     def encode(self, args):
         lst = []
