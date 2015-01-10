@@ -175,7 +175,7 @@ class Connection(threading.local):
 
         for index, chunk in enumerate(chunks):
             cmd = self.commands[index]
-            status, body = chunk[0], chunk[1:]
+            status, body = string(chunk[0]), list(map(string, chunk[1:]))
 
             if status == 'ok':
                 data = self.build(commands[cmd[0]], body)
