@@ -211,6 +211,9 @@ class Client(BaseClient):
         self.port = port
         self.conn = Connection(host=host, port=port)
 
+    def close(self):
+        self.conn.close()
+
     @contextlib.contextmanager
     def pipeline(self):
         yield Pipeline(self.conn)
