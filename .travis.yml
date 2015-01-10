@@ -11,6 +11,7 @@ branches:
     - master
 
 before_install:
+  - pip install . -I
   - sudo apt-get update -qq
   - sudo apt-get install -qq libsnappy-dev
   - git clone git://github.com/ideawu/ssdb.git
