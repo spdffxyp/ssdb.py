@@ -166,7 +166,7 @@ class Connection(threading.local):
                 self.close()
                 raise socket.error('Socket closed on remote end')
 
-            self.parser.feed(buf)
+            self.parser.feed(string(buf))
             chunk = self.parser.get()
             if chunk is not None:
                 chunks.append(chunk)
@@ -175,7 +175,7 @@ class Connection(threading.local):
 
         for index, chunk in enumerate(chunks):
             cmd = self.commands[index]
-            status, body = string(chunk[0]), list(map(string, chunk[1:]))
+            status, body = chunk[0], chunk[1:]
 
             if status == 'ok':
                 data = self.build(commands[cmd[0]], body)

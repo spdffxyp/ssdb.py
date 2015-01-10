@@ -21,7 +21,7 @@ setup(
     keywords=['ssdb', 'client', 'library'],
     url='https://github.com/hit9/ssdb.py',
     py_modules=['ssdb'],
-    install_requires=['spp>=0.0.4'],
+    install_requires=['spp>=0.0.5'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
