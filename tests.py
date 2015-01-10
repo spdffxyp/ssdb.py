@@ -90,7 +90,7 @@ def test_setbit():
 def test_countbit():
     key = uk()
     assert c.set(key, 'val') == 1
-    assert c.countbit(key) == 8
+    assert c.countbit(key) == 12
 
 
 def test_exists():
@@ -204,8 +204,8 @@ def test_zkeys_zscan_zrscan_zclear():
     assert c.zset(z, a, 12581)
     assert c.zset(z, b, 12582)
     assert c.zkeys(z, '', '', '', -1) == [a, b]
-    assert c.zscan(z, '', '', '', -1) == [a, 12581, b, 12582]
-    assert c.zrscan(z, '', '', '', -1) == [b, 12582, a, 12581]
+    assert c.zscan(z, '', '', '', -1) == [a, '12581', b, '12582']
+    assert c.zrscan(z, '', '', '', -1) == [b, '12582', a, '12581']
     assert c.zclear(z) == 2
 
 
@@ -216,6 +216,6 @@ def test_chinese_value():
 
 
 def test_chinese_key():
-    k = uk() + "你好中国人"
+    k = uk() + '你好中国人'
     assert c.set(k, '你好世界') == 1
     assert c.get(k) == '你好世界'
