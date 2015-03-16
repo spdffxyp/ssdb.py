@@ -4,7 +4,7 @@
 Python client for https://github.com/ideawu/ssdb
 """
 
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 __license__ = 'bsd2'
 
 import spp
