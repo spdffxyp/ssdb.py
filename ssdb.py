@@ -92,7 +92,7 @@ commands = {
     'qback': str,
     'qget': str,
     'qslice': list,
-    'qpush': str,
+    'qpush': int,
     'qpush_front': int,
     'qpush_back': int,
     'qpop': str,
