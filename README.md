@@ -15,6 +15,12 @@ Changes for 0.1.6:
 * No more fix types for zset scores, now is str. (Non-Backward Compact)
 * Add api `client.close`
 
+Ports
+-----
+
+- Node.js ssdb client: https://github.com/eleme/node-ssdb
+- Lua ssdb client (on nginx): https://github.com/eleme/lua-resty-ssdb
+
 Installation
 ------------
 
