@@ -25,6 +25,7 @@ else:
 
 
 commands = {
+    'auth': bool,
     'set': int,
     'setx': int,
     'expire': int,
@@ -83,6 +84,8 @@ commands = {
     'zavg': float,
     'zremrangebyrank': int,
     'zremrangebyscore': int,
+    'zpop_front': list,
+    'zpop_back': list,
     'multi_zset': int,
     'multi_zget': list,
     'multi_zdel': int,
@@ -108,7 +111,7 @@ conversions = {
     str: lambda lst: str(lst[0]),
     float: lambda lst: float(lst[0]),
     bool: lambda lst: bool(int(lst[0])),
-    list: lambda lst: list(lst)
+    list: lambda lst: list(lst),
 }
 
 
