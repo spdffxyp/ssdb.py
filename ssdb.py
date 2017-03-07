@@ -101,6 +101,8 @@ commands = {
     'qpop': str,
     'qpop_front': str,
     'qpop_back': str,
+    'qtrim_front':int,
+    'qtrim_back':int,
     'qlist': list,
     'qrlist': list,
     'info': list
